@@ -1,6 +1,5 @@
 # Calendario-Eventi-ITA-
-Un calendario in html, che salva i dati nel local del pc. 
+An html calendar, which saves the data in the PC local.
 
-
-Calendario progettato nel modo più semplice al mondo.
-Se trovi dei bug ti prego d contattare: chrilanci00@gmail.com.
+Calendar designed in the simplest way in the world. 
+If you find any bugs please contact: chrilanci00@gmail.com.
