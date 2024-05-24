@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendario Eventi</title>
+    <style>
+        :root {
+            --font-size: 16px;
+            --font-family: Arial, sans-serif;
+        }
+        body {
+            font-family: var(--font-family);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f3f3f3;
+            font-size: var(--font-size);
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 0;
+            width: 100%;
+            text-align: center;
+        }
+        main {
+            margin: 20px;
+            width: 80%;
+            max-width: 600px;
+            background-color: white;
+            border: 1px solid #4CAF50;
+            border-radius: 5px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        input[type="date"], input[type="time"], input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            box-sizing: border-box;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+            margin: 5px 0;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #savedEvents {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f1f1f1;
+            border: 1px solid #ccc;
+        }
+        #profileSection, #eventSection {
+            display: none;
+        }
+        /* Aggiunta per gestire il cambio di grandezza del testo */
+        #settingsSection {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Calendario Eventi</h1>
+    </header>
+    <main>
+        <div id="profileSection">
+            <h2>Scegli il tuo profilo</h2>
+            <div id="profiles"></div>
+            <input type="text" id="newProfileName" placeholder="Nome nuovo profilo" />
+            <button onclick="addProfile()">Aggiungi Profilo</button>
+        </div>
+        <div id="eventSection">
+            <h2>Benvenuto, <span id="currentProfileName"></span></h2>
+            <input type="date" id="datePicker" />
+            <input type="time" id="timePicker" />
+            <textarea id="events" placeholder="Scrivi i tuoi eventi qui..."></textarea>
+            <button onclick="saveEvents()">Salva Eventi</button>
+            <div id="savedEvents"></div>
+            <button onclick="logout()">Cambia Profilo</button>
+            <button onclick="deleteProfile()">Elimina Profilo</button>
+            <!-- Aggiunta dell'opzione per le impostazioni -->
+            <!--button onclick="showSettings()">Impostazioni</button-->
+        </div>
+        <!-- Aggiunta dell'area delle impostazioni -->
+        <!--div id="settingsSection">
+            <h2>Impostazioni</h2>
+            <label for="fontSize">Grandezza del Testo:</label>
+            <select id="fontSize">
+                <option value="14">Piccolo</option>
+                <option value="16" selected>Normale</option>
+                <option value="18">Grande</option>
+            </select>
+            <label for="fontFamily">Tipo di Carattere:</label>
+            <select id="fontFamily">
+                <option value="Arial, sans-serif" selected>Arial</option>
+                <option value="Georgia, serif">Georgia</option>
+                <option value="Times New Roman, serif">Times New Roman</option>
+            </select>
+            <button onclick="applySettings()">Applica Impostazioni</button>
+            <button onclick="cancelSettings()">Annulla</button>
+        </div-->
+    </main>
+    <script>
+        let currentUser = null;
+        const users = JSON.parse(localStorage.getItem('users')) || {};
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProfiles();
+            showProfileSection();
+        });
+
+        function loadProfiles() {
+            const profilesDiv = document.getElementById('profiles');
+            profilesDiv.innerHTML = '';
+            for (const username in users) {
+                const button = document.createElement('button');
+                button.textContent = username;
+                button.onclick = () => selectProfile(username);
+                profilesDiv.appendChild(button);
+            }
+        }
+
+        function addProfile() {
+            const newProfileName = document.getElementById('newProfileName').value;
+            if (newProfileName && !users[newProfileName]) {
+                users[newProfileName] = { events: {} };
+                localStorage.setItem('users', JSON.stringify(users));
+                loadProfiles();
+                document.getElementById('newProfileName').value = '';
+            } else {
+                alert('Nome profilo non valido o già esistente.');
+            }
+        }
+
+        function selectProfile(username) {
+            currentUser = username;
+            document.getElementById('currentProfileName').textContent = username;
+            showEventSection();
+        }
+
+        function showProfileSection() {
+            document.getElementById('profileSection').style.display = 'block';
+            document.getElementById('eventSection').style.display = 'none';
+            // document.getElementById('settingsSection').style.display = 'none'; // Nasconde le impostazioni
+        }
+
+        function showEventSection() {
+            document.getElementById('profileSection').style.display = 'none';
+            document.getElementById('eventSection').style.display = 'block';
+            // document.getElementById('settingsSection').style.display = 'none'; // Nasconde le impostazioni
+        }
+		function selectProfile(username) {
+			currentUser = username;
+			document.getElementById('currentProfileName').textContent = username;
+			resetDateTimeInputs(); // Aggiunto per reimpostare le ore e il giorno
+			showEventSection();
+		}
+
+		function resetDateTimeInputs() {
+			document.getElementById('datePicker').value = ''; // Resetta il valore del selettore della data
+			document.getElementById('timePicker').value = ''; // Resetta il valore del selettore dell'ora
+		}
+		
+		function selectProfile(username) {
+			currentUser = username;
+			document.getElementById('currentProfileName').textContent = username;
+			resetDateTimeInputs(); // Resetta i selettori di data e ora
+			resetEvents(); // Resetta il campo degli eventi
+			clearOtherUserData(); // Cancella i dati dell'altro utente
+			showEventSection();
+		}
+
+		function clearOtherUserData() {
+			for (const otherUser in users) {
+				if (otherUser !== currentUser) {
+					delete users[otherUser].events;
+				}
+			}
+			localStorage.setItem('users', JSON.stringify(users));
+		}
+
+
+		function resetDateTimeInputs() {
+			document.getElementById('datePicker').value = ''; // Resetta il valore del selettore della data
+			document.getElementById('timePicker').value = ''; // Resetta il valore del selettore dell'ora
+		}
+
+		function resetEvents() {
+			document.getElementById('events').value = ''; // Resetta il campo degli eventi
+		}
+
+
+
+        // Mostra l'area delle impostazioni
+        /* function showSettings() {
+            document.getElementById('profileSection').style.display = 'none';
+            document.getElementById('eventSection').style.display = 'none';
+            document.getElementById('settingsSection').style.display = 'block';
+        } */
+
+        // Applica le impostazioni selezionate
+        /* function applySettings() {
+            const fontSize = document.getElementById('fontSize').value;
+            const fontFamily = document.getElementById('fontFamily').value;
+            // Applica le impostazioni
+            document.documentElement.style.setProperty('--font-size', fontSize + 'px');
+            document.documentElement.style.setProperty('--font-family', fontFamily);
+            // Nasconde l'area delle impostazioni dopo aver applicato le modifiche
+            document.getElementById('settingsSection').style.display = 'none';
+        }
+
+        // Annulla le modifiche alle impostazioni e nasconde l'area delle impostazioni
+        function cancelSettings() {
+            document.getElementById('settingsSection').style.display = 'none';
+        } */
+
+        function saveEvents() {
+            const selectedDate = document.getElementById('datePicker').value;
+            const selectedTime = document.getElementById('timePicker').value;
+            const eventsText = document.getElementById('events').value;
+            if (selectedDate && selectedTime) {
+                const dateTimeKey = `${selectedDate}T${selectedTime}`;
+                users[currentUser].events[dateTimeKey] = eventsText;
+                localStorage.setItem('users', JSON.stringify(users));
+                alert('Eventi salvati!');
+                displayEvents(selectedDate);
+            } else {
+                alert('Seleziona una data e un\'ora prima di salvare.');
+            }
+        }
+
+        document.getElementById('datePicker').addEventListener('change', function() {
+            const selectedDate = this.value;
+            if (currentUser) {
+                displayEvents(selectedDate);
+            }
+        });
+
+        document.getElementById('timePicker').addEventListener('change', function() {
+            const selectedDate = document.getElementById('datePicker').value;
+            const selectedTime = this.value;
+            if (currentUser && selectedDate) {
+                const dateTimeKey = `${selectedDate}T${selectedTime}`;
+                document.getElementById('events').value = users[currentUser].events[dateTimeKey] || '';
+            }
+        });
+
+        function displayEvents(date) {
+            const savedEventsDiv = document.getElementById('savedEvents');
+            savedEventsDiv.innerHTML = `<h3>Eventi per ${date}</h3>`;
+            const dateEvents = Object.keys(users[currentUser].events)
+                .filter(key => key.startsWith(date))
+                .sort()
+                .map(key => {
+                    const time = key.split('T')[1];
+                    return `<p><strong>${time}:</strong> ${users[currentUser].events[key]}</p>`;
+                })
+                .join('');
+            savedEventsDiv.innerHTML += dateEvents || 'Nessun evento per questa data.';
+        }
+
+        function logout() {
+            currentUser = null;
+            showProfileSection();
+        }
+
+        function deleteProfile() {
+            if (confirm(`Sei sicuro di voler eliminare il profilo ${currentUser}?`)) {
+                delete users[currentUser];
+                localStorage.setItem('users', JSON.stringify(users));
+                currentUser = null;
+                loadProfiles();
+                showProfileSection();
+            }
+        }
+    </script>
+<footer>
+    <p>&copy; 2024 Christian Lancini. Tutti i diritti riservati.</p>
+</footer>
+</body>
+</html>
